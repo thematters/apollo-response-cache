@@ -1,3 +1,5 @@
-import responseCachePlugin from './ApolloServerPluginResponseCache'
+import responseCachePlugin from './plugins/responseCachePlugin'
+import { LogCacheDirective } from './directives/logCache'
+import { PurgeCacheDirective } from './directives/purgeCache'
 
-export { responseCachePlugin }
+export { responseCachePlugin, LogCacheDirective, PurgeCacheDirective }
