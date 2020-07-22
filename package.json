@@ -1,0 +1,75 @@
+{
+  "name": "@matters/matters-server-cache",
+  "version": "1.0.0",
+  "description": "Cache mechanisms (plugins, directives) of Apollo GraphQL, and used by thematters/matters-server repo",
+  "author": "Matters <hi@matters.news>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/thematters/matters-server-cache/issues"
+  },
+  "homepage": "https://github.com/thematters/matters-server-cache#readme",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "rimraf dist/**/* && tsc -d --emitDeclarationOnly --declarationDir dist && rollup -c rollup.config.js",
+    "format": "prettier --write \"src/**/*.{ts,tsx,json}\"",
+    "lint": "eslint . --ext .ts,.tsx"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thematters/matters-server-cache.git"
+  },
+  "keywords": [
+    "apollo",
+    "graphql",
+    "apollo-graphql",
+    "cache",
+    "caching",
+    "directive",
+    "plugin"
+  ],
+  "dependencies": {
+    "apollo-cache-control": "^0.11.1",
+    "apollo-server-caching": "^0.5.2",
+    "apollo-server-plugin-base": "^0.9.1"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^14.0.0",
+    "@rollup/plugin-node-resolve": "^8.4.0",
+    "@rollup/plugin-typescript": "^5.0.2",
+    "@types/graphql": "^14.5.0",
+    "@typescript-eslint/eslint-plugin": "^3.7.0",
+    "@typescript-eslint/parser": "^3.7.0",
+    "apollo-server-types": "^0.5.1",
+    "cz-conventional-changelog": "^3.2.0",
+    "eslint": "^7.5.0",
+    "eslint-config-prettier": "^6.11.0",
+    "husky": "^4.2.5",
+    "prettier": "^2.0.5",
+    "rimraf": "^3.0.2",
+    "rollup": "^2.22.2",
+    "rollup-plugin-peer-deps-external": "^2.2.3",
+    "typescript": "^3.9.7"
+  },
+  "peerDependencies": {
+    "graphql": "^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0"
+  },
+  "files": [
+    "dist/**/*"
+  ],
+  "prettier": {
+    "singleQuote": true,
+    "semi": false
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm run lint && npm run format",
+      "prepare-commit-msg": "exec < /dev/tty && git cz --hook || true"
+    }
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
+  }
+}
