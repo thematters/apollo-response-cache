@@ -11,7 +11,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "rimraf dist/**/* && tsc -d --emitDeclarationOnly --declarationDir dist && rollup -c rollup.config.js",
+    "build": "rimraf dist/**/* && tsc",
     "format": "prettier --write \"src/**/*.{ts,tsx,json}\"",
     "lint": "eslint . --ext .ts,.tsx"
   },
@@ -31,16 +31,14 @@
   "dependencies": {
     "apollo-cache-control": "^0.11.1",
     "apollo-server-caching": "^0.5.2",
-    "apollo-server-plugin-base": "^0.9.1",
-    "graphql": "^15.3.0",
+    "apollo-server-plugin-base": "^0.6.8",
+    "graphql": "^14.7.0",
     "graphql-tools": "^6.0.14",
     "lodash": "^4.17.19"
   },
   "devDependencies": {
-    "@rollup/plugin-commonjs": "^14.0.0",
-    "@rollup/plugin-node-resolve": "^8.4.0",
-    "@rollup/plugin-typescript": "^5.0.2",
     "@types/graphql": "^14.5.0",
+    "@types/ioredis": "^4.17.2",
     "@types/lodash": "^4.14.158",
     "@typescript-eslint/eslint-plugin": "^3.7.0",
     "@typescript-eslint/parser": "^3.7.0",
@@ -52,12 +50,10 @@
     "husky": "^4.2.5",
     "prettier": "^2.0.5",
     "rimraf": "^3.0.2",
-    "rollup": "^2.22.2",
-    "rollup-plugin-peer-deps-external": "^2.2.3",
     "typescript": "^3.9.7"
   },
   "peerDependencies": {
-    "graphql": "^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0",
+    "graphql": "^14.0.0",
     "graphql-tools": "^6.0.0",
     "lodash": "^4.0.0"
   },

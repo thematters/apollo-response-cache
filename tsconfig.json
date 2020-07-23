@@ -1,5 +1,11 @@
 {
   "compilerOptions": {
+    "target": "esnext",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "strict": true,
+    "declaration": true,
+    "outDir": "dist",
     "esModuleInterop": true
   },
   "exclude": ["dist", "node_modules"]

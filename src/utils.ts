@@ -51,7 +51,7 @@ export const invalidateFQC = async ({
 }): Promise<void> => {
   try {
     const key = toNodeFQCKey(node)
-    const hashes = await this.redis.client.smembers(key)
+    const hashes = await redis.client.smembers(key)
 
     hashes.map(async (hash: string) => {
       await redis.client
