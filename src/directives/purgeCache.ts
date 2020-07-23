@@ -1,59 +1,53 @@
 import { defaultFieldResolver, GraphQLField } from 'graphql'
 import { SchemaDirectiveVisitor } from 'graphql-tools'
-import { compact, replace, get } from 'lodash'
+import { get } from 'lodash'
 
-import { CACHE_KEYWORD, CACHE_PREFIX } from '../enums'
+import { invalidateFQC, Node } from '../utils'
 
-interface CacheSet {
-  id: string
-  type: string
+interface PurgeCacheDirectiveProps {
+  // The path to get extra nodes from result.
+  extraNodesPath?: string
+  // Custom function to resolve node type
+  typeResolver?: (type: string, node: any) => string
 }
 
-const getCacheKeys = (customs: CacheSet[], fallback: CacheSet): string[] => {
-  if (customs && customs.length > 0) {
-    return compact(
-      customs.map((custom: CacheSet) => {
-        if (custom && custom.id && custom.type) {
-          return `${CACHE_PREFIX.KEYS}:${custom.type}:${custom.id}`
+export const PurgeCacheDirective = ({
+  extraNodesPath,
+  typeResolver,
+}: PurgeCacheDirectiveProps): typeof SchemaDirectiveVisitor => {
+  class BasePurgeCacheDirective extends SchemaDirectiveVisitor {
+    visitFieldDefinition(field: GraphQLField<any, any>): void {
+      const { resolve = defaultFieldResolver } = field
+      const { type, identifier } = this.args
+
+      field.resolve = async function (...args) {
+        const [root, _, { __redis }] = args
+        const result = await resolve.apply(this, args)
+
+        const nodeType = typeResolver ? typeResolver(type, result) : type
+        const nodeId =
+          get(result, identifier) || get(result, 'id') || get(result, '_id')
+        const defaultNode = { id: nodeId, type: nodeType }
+
+        const shouldPurgeCache = __redis && nodeType && nodeId
+        if (!shouldPurgeCache) {
+          return result
         }
-      })
-    )
-  }
 
-  return [
-    `${CACHE_PREFIX.KEYS}:${replace(fallback.type, '!', '')}:${fallback.id}`,
-  ]
-}
+        const extraNodes = extraNodesPath ? get(result, extraNodesPath, []) : []
+        const nodes: Node[] = [...extraNodes, defaultNode]
+        nodes.map((node) => {
+          if (!node) {
+            return
+          }
 
-export class PurgeCacheDirective extends SchemaDirectiveVisitor {
-  visitFieldDefinition(field: GraphQLField<any, any>): void {
-    const { resolve = defaultFieldResolver } = field
-    field.resolve = async function (...args) {
-      const [root, _, { redis }, { returnType }] = args
+          invalidateFQC({ node, redis: __redis })
+        })
 
-      const result = await resolve.apply(this, args)
-      if (result && result.id && redis && returnType) {
-        try {
-          const cache = get(result, CACHE_KEYWORD, [])
-          const keys = getCacheKeys(cache, {
-            id: result.id,
-            type: `${returnType}`,
-          })
-          keys.map(async (key: string) => {
-            const hashes = await redis.client.smembers(key)
-            hashes.map(async (hash: string) => {
-              await redis.client
-                .pipeline()
-                .del(`fqc:${hash}`)
-                .srem(key, hash)
-                .exec()
-            })
-          })
-        } catch (error) {
-          // TODO: logger
-        }
+        return result
       }
-      return result
     }
   }
+
+  return BasePurgeCacheDirective
 }

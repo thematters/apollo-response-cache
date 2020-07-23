@@ -1,11 +1,19 @@
+// forked from https://github.com/apollographql/apollo-server/tree/master/packages/apollo-server-plugin-response-cache
+
+import { CacheHint, CacheScope } from 'apollo-cache-control'
+import { KeyValueCache, PrefixingKeyValueCache } from 'apollo-server-caching'
 import {
   ApolloServerPlugin,
   GraphQLRequestListener,
 } from 'apollo-server-plugin-base'
-import { GraphQLRequestContext, GraphQLResponse } from 'apollo-server-types'
-import { KeyValueCache, PrefixingKeyValueCache } from 'apollo-server-caching'
-import { ValueOrPromise } from 'apollo-server-types'
-import { CacheHint, CacheScope } from 'apollo-cache-control'
+import {
+  GraphQLRequestContext,
+  GraphQLResponse,
+  ValueOrPromise,
+} from 'apollo-server-types'
+
+import { CACHE_KEY_PREFIX_FQC } from '../enums'
+import { recordNodeFQCMapping } from '../utils'
 
 // XXX This should use createSHA from apollo-server-core in order to work on
 // non-Node environments. I'm not sure where that should end up ---
@@ -79,6 +87,9 @@ interface Options<TContext = Record<string, any>> {
   shouldWriteToCache?(
     requestContext: GraphQLRequestContext<TContext>
   ): ValueOrPromise<boolean>
+
+  // Cache TTL for Node and FQC hashes mapping
+  nodeFQCTTL: number
 }
 
 enum SessionMode {
@@ -140,7 +151,7 @@ export default function plugin(
     ): GraphQLRequestListener<any> {
       const cache = new PrefixingKeyValueCache(
         options.cache || outerRequestContext.cache!,
-        'fqc:'
+        CACHE_KEY_PREFIX_FQC
       )
 
       let sessionId: string | null = null
@@ -152,6 +163,15 @@ export default function plugin(
           requestContext
         ): Promise<GraphQLResponse | null> {
           requestContext.metrics.responseCacheHit = false
+
+          /**
+           * Inject redis instance `__redis` and `__nodeFQCKeySet` to context,
+           * used by `@logCache`, `@purgeCache`,
+           * and `willSendResponse` below.
+           */
+          requestContext.context.__redis =
+            options.cache || outerRequestContext.cache
+          requestContext.context.__nodeFQCKeySet = new Set()
 
           if (!isGraphQLQuery(requestContext)) {
             return null
@@ -220,8 +240,6 @@ export default function plugin(
         },
 
         async willSendResponse(requestContext) {
-          const logger = requestContext.logger || console
-
           if (!isGraphQLQuery(requestContext)) {
             return
           }
@@ -295,13 +313,23 @@ export default function plugin(
             // InMemoryLRUCache synchronously).
             cache
               .set(key, serializedValue, { ttl: overallCachePolicy!.maxAge })
-              .catch(logger.warn)
+              .catch(console.warn)
+
+            const { __nodeFQCKeySet, __redis } = requestContext.context
+            if (__nodeFQCKeySet && __redis) {
+              recordNodeFQCMapping({
+                nodeFQCKeys: __nodeFQCKeySet,
+                fqcKey: key,
+                ttl: options.nodeFQCTTL,
+                redis: __redis,
+              })
+            }
           }
 
           const isPrivate = overallCachePolicy.scope === CacheScope.Private
           if (isPrivate) {
             if (!options.sessionId) {
-              logger.warn(
+              console.warn(
                 'A GraphQL response used @cacheControl or setCacheHint to set cache hints with scope ' +
                   "Private, but you didn't define the sessionId hook for " +
                   'apollo-server-plugin-response-cache. Not caching.'
