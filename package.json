@@ -31,9 +31,9 @@
   "dependencies": {
     "apollo-cache-control": "^0.11.1",
     "apollo-server-caching": "^0.5.2",
-    "apollo-server-plugin-base": "^0.6.8",
+    "apollo-server-plugin-base": "^0.9.1",
     "graphql": "^14.7.0",
-    "graphql-tools": "^6.0.14",
+    "graphql-tools": "^4.0.8",
     "lodash": "^4.17.19"
   },
   "devDependencies": {
@@ -54,7 +54,7 @@
   },
   "peerDependencies": {
     "graphql": "^14.0.0",
-    "graphql-tools": "^6.0.0",
+    "graphql-tools": "^4.0.0",
     "lodash": "^4.0.0"
   },
   "files": [
