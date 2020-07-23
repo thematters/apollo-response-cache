@@ -1,13 +1,13 @@
 {
-  "name": "@matters/matters-server-cache",
+  "name": "@matters/apollo-response-cache",
   "version": "1.0.0",
-  "description": "Cache mechanisms (plugins, directives) of Apollo GraphQL, and used by thematters/matters-server repo",
+  "description": "Caching and invalidation mechanisms (plugins, directives) of Apollo GraphQL",
   "author": "Matters <hi@matters.news>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/thematters/matters-server-cache/issues"
+    "url": "https://github.com/thematters/apollo-response-cache/issues"
   },
-  "homepage": "https://github.com/thematters/matters-server-cache#readme",
+  "homepage": "https://github.com/thematters/apollo-response-cache#readme",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -17,7 +17,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/thematters/matters-server-cache.git"
+    "url": "git+https://github.com/thematters/apollo-response-cache.git"
   },
   "keywords": [
     "apollo",

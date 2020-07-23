@@ -43,5 +43,5 @@ jobs:
         uses: 8398a7/action-slack@v3
         with:
           status: ${{ job.status }}
-          author_name: matters-server-cache
+          author_name: apollo-response-cache
           fields: repo,message,commit,author,action,eventName,ref,workflow,job,took
