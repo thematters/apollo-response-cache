@@ -70,17 +70,23 @@ type Mutation {
 You can also purge cache in the resolver:
 
 ```ts
+const schema = makeExecutableSchema({
+  schemaDirectives: {
+    purgeCache: PurgeCacheDirective({ extraNodesPath: '__invalid_nodes__' }),
+  },
+})
+
 const resolvers = {
   Mutation: {
     archiveArticle: (parent, args, context) => {
       // ...
-      article[CACHE_KEYWORD] = [
+      article.__invalid_nodes__ = [
         {
-          id: article.id,
+          id: '2',
           type: 'Article',
         },
         {
-          id: comment.id,
+          id: '3',
           type: 'Comment',
         },
       ]
@@ -90,3 +96,10 @@ const resolvers = {
   },
 }
 ```
+
+### TODOs
+
+- [x] responseCachePlugin
+- [x] @logCache
+- [x] @purgeCache
+- [ ] Unit Test
