@@ -5,9 +5,38 @@ import { get } from 'lodash'
 import { invalidateFQC, Node } from '../utils'
 
 interface PurgeCacheDirectiveProps {
-  // The path to get extra nodes from result.
+  /**
+   * The path to get extra nodes from result object.
+   *
+   * ```
+   * // define
+   * const schema = makeExecutableSchema({
+   *   schemaDirectives: {
+   *     purgeCache: PurgeCacheDirective({ extraNodesPath: '__invalid_nodes__' }),
+   *   }
+   * })
+   *
+   * type Mutation {
+   *   editArticle(id: ID!): Article! @purgeCache(type: "Article")
+   * }
+   *
+   * // @purgeCache will invalidate three nodes: Article:1, Article:2 and Comment:3.
+   * const editArticleResult = {
+   *   id: '1',
+   *   content: '...',
+   *   __invalid_nodes__: [
+   *     { id: '2', type: 'Article' },
+   *     { id: '3', type: 'Comment' }
+   *   ]
+   * }
+   * ```
+   */
   extraNodesPath?: string
-  // Custom function to resolve node type
+  /**
+   * Custom function for resolving type from union and interface, or any other use cases.
+   *
+   * Same as `@logCache`, see `logCache.ts` for details.
+   **/
   typeResolver?: (type: string, node: any) => string
 }
 
@@ -18,9 +47,9 @@ export const PurgeCacheDirective = ({
   class BasePurgeCacheDirective extends SchemaDirectiveVisitor {
     visitFieldDefinition(field: GraphQLField<any, any>): void {
       const { resolve = defaultFieldResolver } = field
-      const { type, identifier } = this.args
 
-      field.resolve = async function (...args) {
+      field.resolve = async (...args) => {
+        const { type, identifier } = this.args
         const [root, _, { __redis }] = args
         const result = await resolve.apply(this, args)
 

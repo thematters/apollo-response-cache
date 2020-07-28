@@ -5,7 +5,33 @@ import { get } from 'lodash'
 import { toNodeFQCKey } from '../utils'
 
 interface LogCacheDirectiveProps {
-  // Custom function to resolve node type
+  /**
+   * Custom function for resolving type from union and interface, or any other use cases.
+   *
+   * ```
+   * // define
+   * const typeResolver = (type: string, result: any) => {
+   *   if (['Node', 'Response'].indexOf(type) >= 0) {
+   *     return result.__type
+   *   }
+   *   return type
+   * }
+   *
+   * const schema = makeExecutableSchema({
+   *   schemaDirectives: {
+   *     purgeCache: PurgeCacheDirective({ typeResolver }),
+   *   }
+   * })
+   *
+   * type Query {
+   *   node(input: NodeInput!): Node @logCache(type: "Node")
+   * }
+   *
+   * // resolved as `Article`
+   * const nodeResult = { id: '2', __type: 'Article' }
+   *
+   * ```
+   */
   typeResolver?: (type: string, node: any) => string
 }
 
@@ -15,9 +41,9 @@ export const LogCacheDirective = ({
   class BaseLogCacheDirective extends SchemaDirectiveVisitor {
     visitFieldDefinition(field: GraphQLField<any, any>): void {
       const { resolve = defaultFieldResolver } = field
-      const { type, identifier } = this.args
 
-      field.resolve = async function (...args) {
+      field.resolve = async (...args) => {
+        const { type, identifier } = this.args
         const [root, _, { __nodeFQCKeySet, __redis }] = args
         const result = await resolve.apply(this, args)
 
