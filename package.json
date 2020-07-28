@@ -1,6 +1,6 @@
 {
   "name": "@matters/apollo-response-cache",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Caching and invalidation mechanisms (plugins, directives) of Apollo GraphQL",
   "author": "Matters <hi@matters.news>",
   "license": "MIT",
