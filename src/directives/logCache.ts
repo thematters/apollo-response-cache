@@ -47,20 +47,27 @@ export const LogCacheDirective = ({
         const [root, _, { __nodeFQCKeySet, __redis }] = args
         const result = await resolve.apply(this, args)
 
-        const nodeType = typeResolver ? typeResolver(type, result) : type
-        const nodeId =
-          get(result, identifier) || get(result, 'id') || get(result, '_id')
-
-        const shouldLogCache = __redis && __nodeFQCKeySet && nodeType && nodeId
-        if (!shouldLogCache) {
+        if (!__redis || !__nodeFQCKeySet) {
           return result
         }
 
-        try {
-          __nodeFQCKeySet.add(toNodeFQCKey({ type: nodeType, id: nodeId }))
-        } catch (error) {
-          console.warn(error)
-        }
+        const nodes = Array.isArray(result) ? result : [result]
+
+        nodes.forEach((node) => {
+          const nodeType = typeResolver ? typeResolver(type, node) : type
+          const nodeId =
+            get(node, identifier) || get(node, 'id') || get(node, '_id')
+
+          if (!nodeType || !nodeId) {
+            return
+          }
+
+          try {
+            __nodeFQCKeySet.add(toNodeFQCKey({ type: nodeType, id: nodeId }))
+          } catch (error) {
+            console.warn(error)
+          }
+        })
 
         return result
       }
