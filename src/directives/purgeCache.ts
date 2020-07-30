@@ -53,24 +53,28 @@ export const PurgeCacheDirective = ({
         const [root, _, { __redis }] = args
         const result = await resolve.apply(this, args)
 
-        const nodeType = typeResolver ? typeResolver(type, result) : type
-        const nodeId =
-          get(result, identifier) || get(result, 'id') || get(result, '_id')
-        const defaultNode = { id: nodeId, type: nodeType }
-
-        const shouldPurgeCache = __redis && nodeType && nodeId
-        if (!shouldPurgeCache) {
+        if (!__redis) {
           return result
         }
 
         const extraNodes = extraNodesPath ? get(result, extraNodesPath, []) : []
-        const nodes: Node[] = [...extraNodes, defaultNode]
-        nodes.map((node) => {
-          if (!node) {
+        const nodes = Array.isArray(result)
+          ? [...extraNodes, ...result]
+          : [...extraNodes, result]
+
+        nodes.forEach((node) => {
+          const nodeType = typeResolver ? typeResolver(type, node) : type
+          const nodeId =
+            get(node, identifier) || get(node, 'id') || get(node, '_id')
+
+          if (!nodeType || !nodeId) {
             return
           }
 
-          invalidateFQC({ node, redis: __redis })
+          invalidateFQC({
+            node: { type: nodeType, id: nodeId },
+            redis: __redis,
+          })
         })
 
         return result
