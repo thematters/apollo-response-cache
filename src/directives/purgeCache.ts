@@ -57,12 +57,10 @@ export const PurgeCacheDirective = ({
           return result
         }
 
-        const extraNodes = extraNodesPath ? get(result, extraNodesPath, []) : []
-        const nodes = Array.isArray(result)
-          ? [...extraNodes, ...result]
-          : [...extraNodes, result]
-
-        nodes.forEach((node) => {
+        // parse results
+        const results = Array.isArray(result) ? [...result] : [result]
+        const parsedResults: Node[] = []
+        results.map((node) => {
           const nodeType = typeResolver ? typeResolver(type, node) : type
           const nodeId =
             get(node, identifier) || get(node, 'id') || get(node, '_id')
@@ -71,8 +69,19 @@ export const PurgeCacheDirective = ({
             return
           }
 
+          parsedResults.push({ type: nodeType, id: nodeId })
+        })
+
+        // merge results and extras
+        const extraNodes: Node[] = extraNodesPath
+          ? get(result, extraNodesPath, [])
+          : []
+        const nodes = [...extraNodes, ...parsedResults]
+
+        // invalidate
+        nodes.forEach((node) => {
           invalidateFQC({
-            node: { type: nodeType, id: nodeId },
+            node,
             redis: __redis,
           })
         })
