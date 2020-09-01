@@ -40,7 +40,7 @@
     "@types/graphql": "^14.5.0",
     "@types/ioredis": "^4.17.2",
     "@types/lodash": "^4.14.158",
-    "@typescript-eslint/eslint-plugin": "^3.7.0",
+    "@typescript-eslint/eslint-plugin": "^4.0.0",
     "@typescript-eslint/parser": "^3.7.0",
     "apollo-server-cache-redis": "^1.2.2",
     "apollo-server-types": "^0.5.1",
