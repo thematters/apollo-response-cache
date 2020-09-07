@@ -1,6 +1,6 @@
 # apollo-response-cache
 
-![Deploy Status](https://github.com/thematters/apollo-response-cache/workflows/Build%20&%20Publish/badge.svg) ![Release Status](https://github.com/thematters/apollo-response-cache/workflows/Create%20Release/badge.svg) [![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg)](http://commitizen.github.io/cz-cli/)
+![Publish Status](https://github.com/thematters/apollo-response-cache/workflows/Publish/badge.svg) ![Test Status](https://github.com/thematters/apollo-response-cache/workflows/Test/badge.svg) [![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg)](http://commitizen.github.io/cz-cli/)
 
 Caching and invalidation mechanisms (plugins, directives) of Apollo GraphQL, used by [`matters-server`](https://github.com/thematters/matters-server).
 
