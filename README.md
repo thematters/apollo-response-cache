@@ -20,6 +20,11 @@ Once a mutation updates this node, `@purgeCache` will purge related `fqc`.
 
 ### Usage
 
+Install package:
+```bash
+npm i @matters/apollo-response-cache
+```
+
 Add plugin and directives to the constructor:
 
 ```ts
