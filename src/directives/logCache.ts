@@ -6,7 +6,7 @@ import { toNodeFQCKey } from '../utils'
 
 interface LogCacheDirectiveProps {
   /**
-   * Custom function for resolving type from union and interface, or any other use cases.
+   * Custom function to resolve node type and id.
    *
    * ```
    * // define
@@ -33,10 +33,12 @@ interface LogCacheDirectiveProps {
    * ```
    */
   typeResolver?: (type: string, node: any) => string
+  idResolver?: (type: string, node: any) => string
 }
 
 export const LogCacheDirective = ({
   typeResolver,
+  idResolver,
 }: LogCacheDirectiveProps): typeof SchemaDirectiveVisitor => {
   class BaseLogCacheDirective extends SchemaDirectiveVisitor {
     visitFieldDefinition(field: GraphQLField<any, any>): void {
@@ -55,8 +57,9 @@ export const LogCacheDirective = ({
 
         nodes.forEach((node) => {
           const nodeType = typeResolver ? typeResolver(type, node) : type
-          const nodeId =
-            get(node, identifier) || get(node, 'id') || get(node, '_id')
+          const nodeId = idResolver
+            ? idResolver(type, node)
+            : get(node, identifier) || get(node, 'id') || get(node, '_id')
 
           if (!nodeType || !nodeId) {
             return

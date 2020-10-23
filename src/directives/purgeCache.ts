@@ -33,16 +33,18 @@ interface PurgeCacheDirectiveProps {
    */
   extraNodesPath?: string
   /**
-   * Custom function for resolving type from union and interface, or any other use cases.
+   * Custom function to resolve type and id.
    *
    * Same as `@logCache`, see `logCache.ts` for details.
    **/
   typeResolver?: (type: string, node: any) => string
+  idResolver?: (type: string, node: any) => string
 }
 
 export const PurgeCacheDirective = ({
   extraNodesPath,
   typeResolver,
+  idResolver,
 }: PurgeCacheDirectiveProps): typeof SchemaDirectiveVisitor => {
   class BasePurgeCacheDirective extends SchemaDirectiveVisitor {
     visitFieldDefinition(field: GraphQLField<any, any>): void {
@@ -62,8 +64,9 @@ export const PurgeCacheDirective = ({
         const parsedResults: Node[] = []
         results.map((node) => {
           const nodeType = typeResolver ? typeResolver(type, node) : type
-          const nodeId =
-            get(node, identifier) || get(node, 'id') || get(node, '_id')
+          const nodeId = idResolver
+            ? idResolver(type, node)
+            : get(node, identifier) || get(node, 'id') || get(node, '_id')
 
           if (!nodeType || !nodeId) {
             return
