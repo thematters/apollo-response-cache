@@ -13,7 +13,7 @@ Caching and invalidation mechanisms (plugins, directives) of Apollo GraphQL, use
 On each query request,
 
 1. `responseCachePlugin` creates an empty key set, and injects it to the context.
-2. `@logCache` collects node on its field, then add to the key set.
+2. `@logCache` collects nodes on its field, then add to the key set.
 3. `responseCachePlugin` writes query response cache (`fqc`) and node-fqc key mapping to in-memory data store.
 
 Once a mutation updates this node, `@purgeCache` will purge related `fqc`.
@@ -21,6 +21,7 @@ Once a mutation updates this node, `@purgeCache` will purge related `fqc`.
 ### Usage
 
 Install package:
+
 ```bash
 npm i @matters/apollo-response-cache
 ```
@@ -100,6 +101,31 @@ const resolvers = {
     },
   },
 }
+```
+
+#### Customize node type & id resolvers
+
+You might want a custom function to resolve node's type and id since it may be a `union` or `interface` type.
+
+```ts
+const typeResolver = (type: string, result: any) => {
+  if (['Node', 'Response'].indexOf(type) >= 0) {
+    return result.__type
+  }
+  return type
+}
+const idResolver = (type: string, result: any) => {
+  if (['Node', 'Response'].indexOf(type) >= 0) {
+    return result.__unusual_id__
+  }
+  return result.id
+}
+
+const schema = makeExecutableSchema({
+  schemaDirectives: {
+    purgeCache: PurgeCacheDirective({ typeResolver, idResolver }),
+  },
+})
 ```
 
 ### TODOs
