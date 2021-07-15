@@ -1,5 +1,5 @@
 import { defaultFieldResolver, GraphQLField } from 'graphql'
-import { SchemaDirectiveVisitor } from 'graphql-tools'
+import { SchemaDirectiveVisitor } from '@graphql-tools/utils'
 import { get } from 'lodash'
 
 import { toNodeFQCKey } from '../utils'

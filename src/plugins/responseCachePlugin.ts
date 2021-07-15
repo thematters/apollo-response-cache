@@ -1,16 +1,11 @@
-// forked from https://github.com/apollographql/apollo-server/tree/master/packages/apollo-server-plugin-response-cache
-
-import { CacheHint, CacheScope } from 'apollo-cache-control'
-import { KeyValueCache, PrefixingKeyValueCache } from 'apollo-server-caching'
 import {
   ApolloServerPlugin,
   GraphQLRequestListener,
 } from 'apollo-server-plugin-base'
-import {
-  GraphQLRequestContext,
-  GraphQLResponse,
-  ValueOrPromise,
-} from 'apollo-server-types'
+import { GraphQLRequestContext, GraphQLResponse } from 'apollo-server-types'
+import { KeyValueCache, PrefixingKeyValueCache } from 'apollo-server-caching'
+import type { CacheHint, ValueOrPromise } from 'apollo-server-types'
+import { CacheScope } from 'apollo-server-types'
 
 import { CACHE_KEY_PREFIX_FQC } from '../enums'
 import { recordNodeFQCMapping } from '../utils'
@@ -146,9 +141,9 @@ export default function plugin(
   options: Options = Object.create(null)
 ): ApolloServerPlugin {
   return {
-    requestDidStart(
+    async requestDidStart(
       outerRequestContext: GraphQLRequestContext<any>
-    ): GraphQLRequestListener<any> {
+    ): Promise<GraphQLRequestListener<any>> {
       const cache = new PrefixingKeyValueCache(
         options.cache || outerRequestContext.cache!,
         CACHE_KEY_PREFIX_FQC
@@ -192,7 +187,7 @@ export default function plugin(
             const value: CacheValue = JSON.parse(serializedValue)
             // Use cache policy from the cache (eg, to calculate HTTP response
             // headers).
-            requestContext.overallCachePolicy = value.cachePolicy
+            requestContext.overallCachePolicy.replace(value.cachePolicy)
             requestContext.metrics.responseCacheHit = true
             age = Math.round((+new Date() - value.cacheTime) / 1000)
             return { data: value.data }
@@ -218,11 +213,11 @@ export default function plugin(
           // Note that we set up sessionId and baseCacheKey before doing this
           // check, so that we can still write the result to the cache even if
           // we are told not to read from the cache.
-          if (
-            options.shouldReadFromCache &&
-            !options.shouldReadFromCache(requestContext)
-          ) {
-            return null
+          if (options.shouldReadFromCache) {
+            const shouldReadFromCache = await options.shouldReadFromCache(
+              requestContext
+            )
+            if (!shouldReadFromCache) return null
           }
 
           if (sessionId === null) {
@@ -240,6 +235,8 @@ export default function plugin(
         },
 
         async willSendResponse(requestContext) {
+          const logger = requestContext.logger || console
+
           if (!isGraphQLQuery(requestContext)) {
             return
           }
@@ -251,20 +248,19 @@ export default function plugin(
             }
             return
           }
-          if (
-            options.shouldWriteToCache &&
-            !options.shouldWriteToCache(requestContext)
-          ) {
-            return
+
+          if (options.shouldWriteToCache) {
+            const shouldWriteToCache = await options.shouldWriteToCache(
+              requestContext
+            )
+            if (!shouldWriteToCache) return
           }
 
-          const { response, overallCachePolicy } = requestContext
-          if (
-            response.errors ||
-            !response.data ||
-            !overallCachePolicy ||
-            overallCachePolicy.maxAge <= 0
-          ) {
+          const { response } = requestContext
+          const { data } = response
+          const policyIfCacheable =
+            requestContext.overallCachePolicy.policyIfCacheable()
+          if (response.errors || !data || !policyIfCacheable) {
             // This plugin never caches errors or anything without a cache policy.
             //
             // There are two reasons we don't cache errors. The user-level
@@ -279,8 +275,6 @@ export default function plugin(
             return
           }
 
-          const data = response.data!
-
           // We're pretty sure that any path that calls willSendResponse with a
           // non-error response will have already called our execute hook above,
           // but let's just double-check that, since accidentally ignoring
@@ -291,16 +285,16 @@ export default function plugin(
             )
           }
 
-          function cacheSetInBackground(
+          const cacheSetInBackground = (
             contextualCacheKeyFields: ContextualCacheKey
-          ) {
+          ): void => {
             const key = cacheKeyString({
               ...baseCacheKey!,
               ...contextualCacheKeyFields,
             })
             const value: CacheValue = {
               data,
-              cachePolicy: overallCachePolicy!,
+              cachePolicy: policyIfCacheable,
               cacheTime: +new Date(),
             }
             const serializedValue = JSON.stringify(value)
@@ -312,8 +306,8 @@ export default function plugin(
             // still calls `cache.set` synchronously (ie, that it writes to
             // InMemoryLRUCache synchronously).
             cache
-              .set(key, serializedValue, { ttl: overallCachePolicy!.maxAge })
-              .catch(console.warn)
+              .set(key, serializedValue, { ttl: policyIfCacheable.maxAge })
+              .catch(logger.warn)
 
             const { __nodeFQCKeySet, __redis } = requestContext.context
             if (__nodeFQCKeySet && __redis) {
@@ -326,10 +320,10 @@ export default function plugin(
             }
           }
 
-          const isPrivate = overallCachePolicy.scope === CacheScope.Private
+          const isPrivate = policyIfCacheable.scope === CacheScope.Private
           if (isPrivate) {
             if (!options.sessionId) {
-              console.warn(
+              logger.warn(
                 'A GraphQL response used @cacheControl or setCacheHint to set cache hints with scope ' +
                   "Private, but you didn't define the sessionId hook for " +
                   'apollo-server-plugin-response-cache. Not caching.'
