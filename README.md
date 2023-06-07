@@ -20,6 +20,8 @@ Once a mutation updates this node, `@purgeCache` will purge related `fqc`.
 
 ### Usage
 
+*Note: there are breaking change in API since 2.0.0*
+
 Install package:
 
 ```bash
@@ -30,35 +32,27 @@ Add plugin and directives to the constructor:
 
 ```ts
 import {
+  logCacheDirective,
+  purgeCacheDirective,
   responseCachePlugin,
-  LogCacheDirective,
-  PurgeCacheDirective,
 } from '@matters/apollo-response-cache'
 
+const {typeDef: logCacheDirectiveTypeDef, transformer: logCacheDirectiveTransformer} = logCacheDirective
+const {typeDef: purgeCacheDirectiveTypeDef, transformer: purgeCacheDirectiveTransformer} = purgeCacheDirective
+
+let schema = makeExecutableSchema({
+  typeDefs: [yourTypeDef, logCacheDirectiveTypeDef, purgeCacheDirectiveTypeDef]
+})
+
+schema = logCacheDirectiveTransformer(
+  purgeCacheDirectiveTransformer(schema)
+)
+
 const server = new ApolloServer({
+  schema,
   plugins: [responseCachePlugin()],
 })
 
-const schema = makeExecutableSchema({
-  schemaDirectives: {
-    logCache: LogCacheDirective(),
-    purgeCache: PurgeCacheDirective(),
-  },
-})
-```
-
-Add definitions to your schema:
-
-```graphql
-directive @logCache(
-  type: String!
-  identifier: String = "id"
-) on FIELD_DEFINITION
-
-directive @purgeCache(
-  type: String!
-  identifier: String = "id"
-) on FIELD_DEFINITION
 ```
 
 Use in the schema:

@@ -1,5 +1,4 @@
-import { RedisCache } from 'apollo-server-cache-redis'
-import Redis from 'ioredis'
+import type { Redis } from 'ioredis'
 
 import { CACHE_KEY_PREFIX_FQC, CACHE_KEY_PREFIX_NODE_FQC } from './enums'
 
@@ -27,14 +26,12 @@ export const recordNodeFQCMapping = ({
   nodeFQCKeys: string[]
   fqcKey: string
   ttl: number
-  redis: RedisCache
+  redis: Redis
 }): void => {
-  const redisClient = redis.client as Redis.Redis
-
   try {
     nodeFQCKeys.forEach((cacheKey: string) => {
-      redisClient.sadd(cacheKey, fqcKey)
-      redisClient.expire(cacheKey, ttl)
+      redis.sadd(cacheKey, fqcKey)
+      redis.expire(cacheKey, ttl)
     })
   } catch (error) {
     console.warn(error)
@@ -49,14 +46,14 @@ export const invalidateFQC = async ({
   redis,
 }: {
   node: Node
-  redis: RedisCache
+  redis: Redis
 }): Promise<void> => {
   try {
     const key = toNodeFQCKey(node)
-    const hashes = await (redis.client as Redis.Redis).smembers(key)
+    const hashes = await redis.smembers(key)
 
     hashes.map(async (hash: string) => {
-      await (redis.client as Redis.Redis)
+      await redis
         .pipeline()
         .del(`${CACHE_KEY_PREFIX_FQC}${hash}`)
         .srem(key, hash)

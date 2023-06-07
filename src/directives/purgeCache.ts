@@ -1,10 +1,9 @@
-import { defaultFieldResolver, GraphQLField } from 'graphql'
-import { SchemaDirectiveVisitor } from '@graphql-tools/utils'
-import { get } from 'lodash'
+import { defaultFieldResolver, GraphQLSchema } from 'graphql'
+import { mapSchema, getDirective, MapperKind } from '@graphql-tools/utils'
 
 import { invalidateFQC, Node } from '../utils'
 
-interface PurgeCacheDirectiveProps {
+interface PurgeCacheDirectiveOption {
   /**
    * The path to get extra nodes from result object.
    *
@@ -41,58 +40,62 @@ interface PurgeCacheDirectiveProps {
   idResolver?: (type: string, node: any) => string
 }
 
-export const PurgeCacheDirective = ({
-  extraNodesPath,
-  typeResolver,
-  idResolver,
-}: PurgeCacheDirectiveProps): typeof SchemaDirectiveVisitor => {
-  class BasePurgeCacheDirective extends SchemaDirectiveVisitor {
-    visitFieldDefinition(field: GraphQLField<any, any>): void {
-      const { resolve = defaultFieldResolver } = field
+export const purgeCacheDirective = (directiveName: string) => ({
+  typeDef: `directive @${directiveName}(type: String! identifier: String = "id") on FIELD_DEFINITION`,
 
-      field.resolve = async (...args) => {
-        const { type, identifier } = this.args
-        const [root, _, { __redis }] = args
-        const result = await resolve.apply(this, args)
+  transformer: (schema: GraphQLSchema, options: PurgeCacheDirectiveOption) => {
+    return mapSchema(schema, {
+      [MapperKind.OBJECT_FIELD]: (fieldConfig) => {
+        const directive = getDirective(schema, fieldConfig, directiveName)?.[0]
 
-        if (!__redis) {
-          return result
-        }
+        if (directive) {
+          const { resolve = defaultFieldResolver } = fieldConfig
 
-        // parse results
-        const results = Array.isArray(result) ? [...result] : [result]
-        const parsedResults: Node[] = []
-        results.map((node) => {
-          const nodeType = typeResolver ? typeResolver(type, node) : type
-          const nodeId = idResolver
-            ? idResolver(type, node)
-            : get(node, identifier) || get(node, 'id') || get(node, '_id')
+          fieldConfig.resolve = async (source, args, context, info) => {
+            const result = await resolve(source, args, context, info)
 
-          if (!nodeType || !nodeId) {
-            return
+            const { type, identifier } = directive
+            const { __redis } = context
+
+            if (!__redis) {
+              return result
+            }
+
+            const results = Array.isArray(result) ? [...result] : [result]
+            const parsedResults: Node[] = []
+            const { typeResolver, idResolver, extraNodesPath } = options
+            results.map((node) => {
+              const nodeType = typeResolver ? typeResolver(type, node) : type
+              const nodeId = idResolver
+                ? idResolver(type, node)
+                : node[identifier] || node['id'] || node['_id']
+
+              if (!nodeType || !nodeId) {
+                return
+              }
+
+              parsedResults.push({ type: nodeType, id: nodeId })
+            })
+
+            // merge results and extras
+            const extraNodes: Node[] = extraNodesPath
+              ? (result as any)[extraNodesPath] || []
+              : []
+            const nodes = [...extraNodes, ...parsedResults]
+
+            // invalidate
+            nodes.forEach((node) => {
+              invalidateFQC({
+                node,
+                redis: __redis,
+              })
+            })
+
+            return result
           }
-
-          parsedResults.push({ type: nodeType, id: nodeId })
-        })
-
-        // merge results and extras
-        const extraNodes: Node[] = extraNodesPath
-          ? get(result, extraNodesPath, [])
-          : []
-        const nodes = [...extraNodes, ...parsedResults]
-
-        // invalidate
-        nodes.forEach((node) => {
-          invalidateFQC({
-            node,
-            redis: __redis,
-          })
-        })
-
-        return result
-      }
-    }
-  }
-
-  return BasePurgeCacheDirective
-}
+        }
+        return fieldConfig
+      },
+    })
+  },
+})
