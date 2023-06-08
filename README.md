@@ -20,7 +20,8 @@ Once a mutation updates this node, `@purgeCache` will purge related `fqc`.
 
 ### Usage
 
-*Note: there are breaking change in API since 2.0.0*
+*Note: there are breaking changes in API from 1.4.0 to 2.0.0,  see below Breaking changes section for more info*
+
 
 Install package:
 
@@ -121,6 +122,15 @@ const schema = makeExecutableSchema({
   },
 })
 ```
+
+### Breaking changes in 2.0.0
+
+1. Support apollo-server v4 now, but drop support for apollo-server v3 and graphql-tools v8 and below
+2. All APIs, including plugin option, directives, helpers interface, changed：
+    a. pulgin constructor take redis client (type `Redis` from ioredis) instead of `RedisCache` from deprecated apollo-server-cache-redis
+    b. invalidateFQC take redis instead of `RedisCache`
+    c. directives api is totally changed to function way, as graphql-tools/utils v8 depreacated class base SchemaDirectiveVisitor
+
 
 ### TODOs
 
