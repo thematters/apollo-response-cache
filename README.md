@@ -131,6 +131,10 @@ const schema = makeExecutableSchema({
     b. invalidateFQC take redis instead of `RedisCache`
     c. directives api is totally changed to function way, as graphql-tools/utils v8 depreacated class base SchemaDirectiveVisitor
 
+### Known issues
+
+If hit `Types have separate declarations of a private property '__identity'` when build apollo server codebase, make sure both direct dependency on `@apollo/server` and this package dependency on `@apollo/server` share totally same version.
+
 
 ### TODOs
 
