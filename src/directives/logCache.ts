@@ -33,7 +33,7 @@ interface LogCacheDirectiveOption {
   idResolver?: (type: string, node: any) => string
 }
 
-export const logCacheDirective = (directiveName: string) => ({
+export const logCacheDirective = (directiveName = 'logCache') => ({
   typeDef: `directive @${directiveName}(type: String! identifier: String = "id") on FIELD_DEFINITION`,
 
   transformer: (schema: GraphQLSchema, options: LogCacheDirectiveOption) => {

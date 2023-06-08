@@ -40,7 +40,7 @@ interface PurgeCacheDirectiveOption {
   idResolver?: (type: string, node: any) => string
 }
 
-export const purgeCacheDirective = (directiveName: string) => ({
+export const purgeCacheDirective = (directiveName = 'purgeCache') => ({
   typeDef: `directive @${directiveName}(type: String! identifier: String = "id") on FIELD_DEFINITION`,
 
   transformer: (schema: GraphQLSchema, options: PurgeCacheDirectiveOption) => {
