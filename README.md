@@ -37,8 +37,8 @@ import {
   responseCachePlugin,
 } from '@matters/apollo-response-cache'
 
-const {typeDef: logCacheDirectiveTypeDef, transformer: logCacheDirectiveTransformer} = logCacheDirective
-const {typeDef: purgeCacheDirectiveTypeDef, transformer: purgeCacheDirectiveTransformer} = purgeCacheDirective
+const {typeDef: logCacheDirectiveTypeDef, transformer: logCacheDirectiveTransformer} = logCacheDirective()
+const {typeDef: purgeCacheDirectiveTypeDef, transformer: purgeCacheDirectiveTransformer} = purgeCacheDirective()
 
 let schema = makeExecutableSchema({
   typeDefs: [yourTypeDef, logCacheDirectiveTypeDef, purgeCacheDirectiveTypeDef]
