@@ -1,10 +1,9 @@
-import { defaultFieldResolver, GraphQLField } from 'graphql'
-import { SchemaDirectiveVisitor } from '@graphql-tools/utils'
-import { get } from 'lodash'
+import { defaultFieldResolver, GraphQLSchema } from 'graphql'
+import { mapSchema, getDirective, MapperKind } from '@graphql-tools/utils'
 
 import { toNodeFQCKey } from '../utils'
 
-interface LogCacheDirectiveProps {
+interface LogCacheDirectiveOption {
   /**
    * Custom function to resolve node type and id.
    *
@@ -17,11 +16,9 @@ interface LogCacheDirectiveProps {
    *   return type
    * }
    *
-   * const schema = makeExecutableSchema({
-   *   schemaDirectives: {
-   *     purgeCache: PurgeCacheDirective({ typeResolver }),
-   *   }
-   * })
+   * let schema = makeExecutableSchema(..)
+   *
+   * schema = logCacheDirectiveTransformer(schema, 'logCache', {typeResolver, idResolver})
    *
    * type Query {
    *   node(input: NodeInput!): Node @logCache(type: "Node")
@@ -36,46 +33,53 @@ interface LogCacheDirectiveProps {
   idResolver?: (type: string, node: any) => string
 }
 
-export const LogCacheDirective = ({
-  typeResolver,
-  idResolver,
-}: LogCacheDirectiveProps): typeof SchemaDirectiveVisitor => {
-  class BaseLogCacheDirective extends SchemaDirectiveVisitor {
-    visitFieldDefinition(field: GraphQLField<any, any>): void {
-      const { resolve = defaultFieldResolver } = field
+export const logCacheDirective = (directiveName = 'logCache') => ({
+  typeDef: `directive @${directiveName}(type: String! identifier: String = "id") on FIELD_DEFINITION`,
 
-      field.resolve = async (...args) => {
-        const { type, identifier } = this.args
-        const [root, _, { __nodeFQCKeySet, __redis }] = args
-        const result = await resolve.apply(this, args)
+  transformer: (schema: GraphQLSchema, options: LogCacheDirectiveOption) => {
+    return mapSchema(schema, {
+      [MapperKind.OBJECT_FIELD]: (fieldConfig) => {
+        const directive = getDirective(schema, fieldConfig, directiveName)?.[0]
 
-        if (!__redis || !__nodeFQCKeySet) {
-          return result
+        if (directive) {
+          const { resolve = defaultFieldResolver } = fieldConfig
+
+          fieldConfig.resolve = async (source, args, context, info) => {
+            const result = await resolve(source, args, context, info)
+
+            const { type, identifier } = directive
+            const { __nodeFQCKeySet } = context
+
+            if (!__nodeFQCKeySet) {
+              return result
+            }
+
+            const nodes = Array.isArray(result) ? result : [result]
+            const { typeResolver, idResolver } = options
+            nodes.forEach((node) => {
+              const nodeType = typeResolver ? typeResolver(type, node) : type
+              const nodeId = idResolver
+                ? idResolver(type, node)
+                : node[identifier] || node['id'] || node['_id']
+
+              if (!nodeType || !nodeId) {
+                return
+              }
+
+              try {
+                __nodeFQCKeySet.add(
+                  toNodeFQCKey({ type: nodeType, id: nodeId })
+                )
+              } catch (error) {
+                console.warn(error)
+              }
+            })
+            return result
+          }
+
+          return fieldConfig
         }
-
-        const nodes = Array.isArray(result) ? result : [result]
-
-        nodes.forEach((node) => {
-          const nodeType = typeResolver ? typeResolver(type, node) : type
-          const nodeId = idResolver
-            ? idResolver(type, node)
-            : get(node, identifier) || get(node, 'id') || get(node, '_id')
-
-          if (!nodeType || !nodeId) {
-            return
-          }
-
-          try {
-            __nodeFQCKeySet.add(toNodeFQCKey({ type: nodeType, id: nodeId }))
-          } catch (error) {
-            console.warn(error)
-          }
-        })
-
-        return result
-      }
-    }
-  }
-
-  return BaseLogCacheDirective
-}
+      },
+    })
+  },
+})

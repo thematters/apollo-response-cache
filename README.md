@@ -20,6 +20,9 @@ Once a mutation updates this node, `@purgeCache` will purge related `fqc`.
 
 ### Usage
 
+*Note: there are breaking changes in API from 1.4.0 to 2.0.0,  see below Breaking changes section for more info*
+
+
 Install package:
 
 ```bash
@@ -30,35 +33,27 @@ Add plugin and directives to the constructor:
 
 ```ts
 import {
+  logCacheDirective,
+  purgeCacheDirective,
   responseCachePlugin,
-  LogCacheDirective,
-  PurgeCacheDirective,
 } from '@matters/apollo-response-cache'
 
+const {typeDef: logCacheDirectiveTypeDef, transformer: logCacheDirectiveTransformer} = logCacheDirective()
+const {typeDef: purgeCacheDirectiveTypeDef, transformer: purgeCacheDirectiveTransformer} = purgeCacheDirective()
+
+let schema = makeExecutableSchema({
+  typeDefs: [yourTypeDef, logCacheDirectiveTypeDef, purgeCacheDirectiveTypeDef]
+})
+
+schema = logCacheDirectiveTransformer(
+  purgeCacheDirectiveTransformer(schema)
+)
+
 const server = new ApolloServer({
+  schema,
   plugins: [responseCachePlugin()],
 })
 
-const schema = makeExecutableSchema({
-  schemaDirectives: {
-    logCache: LogCacheDirective(),
-    purgeCache: PurgeCacheDirective(),
-  },
-})
-```
-
-Add definitions to your schema:
-
-```graphql
-directive @logCache(
-  type: String!
-  identifier: String = "id"
-) on FIELD_DEFINITION
-
-directive @purgeCache(
-  type: String!
-  identifier: String = "id"
-) on FIELD_DEFINITION
 ```
 
 Use in the schema:
@@ -127,6 +122,19 @@ const schema = makeExecutableSchema({
   },
 })
 ```
+
+### Breaking changes in 2.0.0
+
+1. Support apollo-server v4 now, but drop support for apollo-server v3 and graphql-tools v8 and below
+2. All APIs, including plugin option, directives, helpers interface, changed：
+    a. pulgin constructor take redis client (type `Redis` from ioredis) instead of `RedisCache` from deprecated apollo-server-cache-redis
+    b. invalidateFQC take redis instead of `RedisCache`
+    c. directives api is totally changed to function way, as graphql-tools/utils v8 depreacated class base SchemaDirectiveVisitor
+
+### Known issues
+
+If hit `Types have separate declarations of a private property '__identity'` when build apollo server codebase, make sure both direct dependency on `@apollo/server` and this package dependency on `@apollo/server` share totally same version.
+
 
 ### TODOs
 
