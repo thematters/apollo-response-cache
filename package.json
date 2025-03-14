@@ -1,6 +1,6 @@
 {
   "name": "@matters/apollo-response-cache",
-  "version": "2.0.0-alpha.0",
+  "version": "2.1.0",
   "description": "Caching and invalidation mechanisms (plugins, directives) of Apollo GraphQL",
   "author": "Matters <hi@matters.news>",
   "license": "MIT",
@@ -8,8 +8,18 @@
     "url": "https://github.com/thematters/apollo-response-cache/issues"
   },
   "homepage": "https://github.com/thematters/apollo-response-cache#readme",
+  "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "engines": {
+    "node": ">=16"
+  },
   "scripts": {
     "build": "rimraf dist/**/* && tsc",
     "format": "prettier --write \"src/**/*.{ts,tsx,json}\"",
@@ -45,7 +55,7 @@
     "rimraf": "^5.0.1",
     "typescript": "^5.1.3"
   },
-  "peerDenpendencies": {
+  "peerDependencies": {
     "@apollo/server": ">=4.0.0"
   },
   "files": [

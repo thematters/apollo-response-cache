@@ -1,7 +1,7 @@
 import { defaultFieldResolver, GraphQLSchema } from 'graphql'
 import { mapSchema, getDirective, MapperKind } from '@graphql-tools/utils'
 
-import { toNodeFQCKey } from '../utils'
+import { toNodeFQCKey } from '../utils.js'
 
 interface LogCacheDirectiveOption {
   /**

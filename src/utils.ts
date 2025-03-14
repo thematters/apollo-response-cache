@@ -1,6 +1,6 @@
 import type { Redis } from 'ioredis'
 
-import { CACHE_KEY_PREFIX_FQC, CACHE_KEY_PREFIX_NODE_FQC } from './enums'
+import { CACHE_KEY_PREFIX_FQC, CACHE_KEY_PREFIX_NODE_FQC } from './enums.js'
 
 export type Node = { type: string; id: string }
 

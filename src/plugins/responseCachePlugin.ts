@@ -10,8 +10,8 @@ import {
 } from '@apollo/server'
 import { createHash } from '@apollo/utils.createhash'
 
-import { CACHE_KEY_PREFIX_FQC } from '../enums'
-import { recordNodeFQCMapping } from '../utils'
+import { CACHE_KEY_PREFIX_FQC } from '../enums.js'
+import { recordNodeFQCMapping } from '../utils.js'
 
 export interface ApolloServerPluginResponseCacheOptions<
   TContext extends BaseContext
