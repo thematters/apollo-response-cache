@@ -1,7 +1,7 @@
 import { defaultFieldResolver, GraphQLSchema } from 'graphql'
 import { mapSchema, getDirective, MapperKind } from '@graphql-tools/utils'
 
-import { invalidateFQC, Node } from '../utils'
+import { invalidateFQC, Node } from '../utils.js'
 
 interface PurgeCacheDirectiveOption {
   /**
