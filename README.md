@@ -4,7 +4,7 @@
 
 Caching and invalidation mechanisms (plugins, directives) of Apollo GraphQL, used by [`matters-server`](https://github.com/thematters/matters-server).
 
-[`responseCachePlugin`](./src/plugins/responseCachePlugin.ts) is forked from [`apollo-server-plugin-response-cache`](https://github.com/apollographql/apollo-server/tree/main/packages/apollo-server-plugin-response-cache).
+[`responseCachePlugin`](./src/plugins/responseCachePlugin.ts) is forked from [`apollo-server-plugin-response-cache`](https://github.com/apollographql/apollo-server/tree/29322ffb8ccf2a07390465d63a2ba16df5603876/packages/plugin-response-cache).
 
 ### How it works?
 
